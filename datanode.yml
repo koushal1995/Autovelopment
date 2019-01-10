@@ -1,0 +1,43 @@
+- hosts: datanode2
+  vars_prompt: 
+  - name: "ip"
+    prompt: "enter the ip of namenode"
+    private: false
+  tasks:
+  - stat:
+     path: "/share"
+    register: x
+  - name: "creating share folder..."
+    file:
+     path: "/share"
+     state: directory
+    when: x.stat.exists == false
+  - name: "copying hdfs-site.xml..."
+    copy: 
+     src: "/root/Ansible_playbooks/hdfs-site.xml"
+     dest: "/etc/hadoop/hdfs-site.xml"
+  - name: "setting up hdfs-site.xml..."
+    lineinfile:
+     path: "/etc/hadoop/hdfs-site.xml"
+     regexp: "^<name>"
+     line: "<name>dfs.data.dir</name>"
+  - name: "setting up hdfs-site.xml..."
+    lineinfile:
+     path: "/etc/hadoop/hdfs-site.xml"
+     regexp: "^<value>"
+     line: "<value>/share</value>"
+  - name: "copying core-site.xml..."
+    copy:
+     src: "/root/Ansible_playbooks/core-site.xml"
+     dest: "/etc/hadoop/core-site.xml"
+  - name: "setting up core-site.xml..."
+    lineinfile:
+     path: "/etc/hadoop/core-site.xml"
+     regexp: "^<value>"
+     line: "<value>hdfs://{{ ip }}:9001</value>"
+  - name: "flushing firewall..."
+    command: "iptables -F"
+  - name: "disabling selinux..."
+    command: "setenforce 0"
+  - name: "starting datanode..."
+    command: "hadoop-daemon.sh start datanode"

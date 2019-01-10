@@ -1,0 +1,50 @@
+- hosts: localhost
+  vars_prompt: 
+  - name: "ip"
+    prompt: "Enter the master ip..."
+    private: false
+  tasks:
+  - stat:
+     path: "/data"
+    register: x
+  - name: "creating hdfs metadata directory..."
+    file:
+     path: "/data"
+     state: directory
+    when: x.stat.exists == false
+  - name: "setting up hdfs-site.xml..."
+    copy: 
+     src: "/root/Ansible_playbooks/hdfs-site.xml"
+     dest: "/etc/hadoop/hdfs-site.xml"
+  - name: "setting up hdfs-site.xml..."
+    lineinfile:
+     path: "/etc/hadoop/hdfs-site.xml"
+     regexp: "^<name>"
+     line: "<name>dfs.name.dir</name>"
+  - name: "setting up hdfs-site.xml..."
+    lineinfile:
+     path: "/etc/hadoop/hdfs-site.xml"
+     regexp: "^<value>"
+     line: "<value>/data</value>"
+  - name: "setting up core-site.xml..."
+    copy:
+     src: "/root/Ansible_playbooks/core-site.xml"
+     dest: "/etc/hadoop/core-site.xml"
+  - name: "modifying core-site.xml..."
+    lineinfile:
+     path: "/etc/hadoop/core-site.xml"
+     regexp: "^<value>"
+     line: "<value>hdfs://{{ ip }}:9001</value>"
+  - name: "formatting metadata directory..."
+    shell: "echo 'Y'| hadoop namenode -format"
+  - name: "starting hadoop daemon..."
+    command: "hadoop-daemon.sh start namenode" 
+#  - command: "jps"
+ #   register: z
+ # - debug:
+ #    var: z
+ # - debug: 
+ #    msg: "namenode not running..."
+ #   when: "'NameNode' not in z.stdout_lines[0]"
+
+

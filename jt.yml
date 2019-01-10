@@ -1,0 +1,27 @@
+- hosts: localhost
+  vars_prompt:
+  - name: "ip"
+    prompt: "enter jobtracker ip..."
+    private: false
+  tasks:
+  - name: "copying mapred-site.xml..."
+    copy: 
+     src: "/root/Ansible_playbooks/mapred-site.xml"
+     dest: "/etc/hadoop/mapred-site.xml"
+  - name: "setting up mapred-site.xml..."
+    lineinfile:
+     path: "/etc/hadoop/mapred-site.xml"
+     regexp: "^<value>"
+     line: "<value>{{ ip }}:9002</value>"
+  - name: "flushing firewall..."
+    firewalld:
+     port: 9002/tcp
+     permanent: yes
+     state: disabled
+  - name: "disabling selinux..."
+    lineinfile:
+     path: "/etc/selinux/config"
+     regexp: "^SELINUX="
+     line: "SELINUX=permissive"
+  - name: "starting job tracker..."
+    command: "hadoop-daemon.sh start jobtracker"
